@@ -4,7 +4,9 @@ import bcryptjs from "bcryptjs";
 
 export const sendEmail = async ({ email, emailType, userId }: any) => {
   try {
-    const hashedToken = bcryptjs.hash(userId.toString(), 10);
+    // create a hased token
+    const hashedToken = await bcryptjs.hash(userId.toString(), 10);
+
     if (emailType === "VERIFY") {
       await User.findByIdAndUpdate(userId, {
         verifyToken: hashedToken,
@@ -13,9 +15,10 @@ export const sendEmail = async ({ email, emailType, userId }: any) => {
     } else if (emailType === "RESET") {
       await User.findByIdAndUpdate(userId, {
         forgotPasswordToken: hashedToken,
-        forgotPasswwordTokenExpiry: Date.now() + 3600000,
+        forgotPasswordTokenExpiry: Date.now() + 3600000,
       });
     }
+
     var transport = nodemailer.createTransport({
       host: "sandbox.smtp.mailtrap.io",
       port: 2525,
@@ -24,18 +27,22 @@ export const sendEmail = async ({ email, emailType, userId }: any) => {
         pass: "eadfb5ef146a75",
       },
     });
-
     const mailOptions = {
-      from: "vishvam@gmail.com",
+      from: "hitesh@gmail.com",
       to: email,
       subject:
         emailType === "VERIFY" ? "Verify your email" : "Reset your password",
-      html: `<p>Clicl <a href = "${
-        process.env.domain
+      html: `<p>Click <a href="${
+        process.env.DOMAIN
       }/verifyemail?token=${hashedToken}">here</a> to ${
         emailType === "VERIFY" ? "verify your email" : "reset your password"
-      }</p>`,
+      }
+            or copy and paste the link below in your browser. <br> ${
+              process.env.DOMAIN
+            }/verifyemail?token=${hashedToken}
+            </p>`,
     };
+
     const mailresponse = await transport.sendMail(mailOptions);
     return mailresponse;
   } catch (error: any) {
